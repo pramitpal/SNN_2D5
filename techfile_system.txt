@@ -23,4 +23,5 @@ MetalPitch  = 0.000080;//float
 Rw  = 0.720044;//float
 Cw_gnd  = 0.000000000000267339;//float
 Cw_cpl  = 0.000000000000267339;//float
+
 wire_length  = 2.0;//float
