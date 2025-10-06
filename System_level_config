@@ -2,7 +2,7 @@ topology = anynet;
 
 
 routing_function = min;
-network_file = anynet_file;
+network_file = system_level_anynet_file;
 traffic = trace_based;
 injection_process = trace_based;
 
@@ -39,6 +39,6 @@ private_buf_size = 1;
 
 sim_power = 1; //fixed
 
-tech_file = techfile.txt; //change accordingly 
+tech_file = techfile_system.txt; //change accordingly 
 
-channel_width = 128;
+channel_width = 32;
