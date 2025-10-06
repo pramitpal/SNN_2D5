@@ -9,6 +9,11 @@ import math
 import pandas as pd
 
 
+def create_label_mapping(labels):
+    """Map labels to sequential IDs: ['T0', 'T5', 'ACC0'] -> {'T0': 0, 'T5': 1, 'ACC0': 2}"""
+    return {label: idx for idx, label in enumerate(labels)}
+
+
 def find_best_mesh_dimensions(num_chiplets):
     """Calculate optimal mesh dimensions for given number of chiplets."""
     rows = int(math.sqrt(num_chiplets))
@@ -98,13 +103,16 @@ def calculate_manhattan_distance(num_chiplets, source, destination):
 def generate_packet_schedule(df, calculate_hops, time=0):
     """Generate packet schedule from DataFrame of communication patterns."""
     output_lines = []
-    num_chiplets = int(df.index[-1][1:]) + 1
+    
+    # Create mapping from labels to sequential IDs
+    label_to_id = create_label_mapping(df.index)
+    num_chiplets = len(df.index)
 
     for row_label in df.index:
         for col_label in df.columns:
             packets = df.loc[row_label, col_label]
-            source = int(row_label[1:])
-            destination = int(col_label[1:])
+            source = label_to_id[row_label]  # Sequential ID (0, 1, 2, ...)
+            destination = label_to_id[col_label]  # Sequential ID (0, 1, 2, ...)
             no_hops = calculate_hops(num_chiplets, source+1, destination+1)['num_hops']
 
             for i in range(packets):
@@ -130,7 +138,9 @@ def generate_booksim_files(df, topology_filename='anynet_file', trace_filename='
     -----------
     df : pandas.DataFrame
         Communication matrix where df.loc['Ci', 'Cj'] represents number of packets
-        from chiplet i to chiplet j. Index and columns should be labeled as 'C0', 'C1', etc.
+        from chiplet i to chiplet j. Index and columns can have any labels 
+        (e.g., 'C0', 'T0', 'ACC0', 'LIF0', etc.) - they will be mapped to 
+        sequential IDs 0, 1, 2, ...
     topology_filename : str, optional
         Filename for the topology configuration (default: 'anynet_file')
     trace_filename : str, optional
@@ -141,8 +151,8 @@ def generate_booksim_files(df, topology_filename='anynet_file', trace_filename='
     tuple : (topology_lines, trace_lines)
         Lists of configuration lines generated
     """
-    # Calculate number of chiplets
-    num_chiplets = int(df.index[-1][1:]) + 1
+    # Calculate number of chiplets (simply count the rows/columns)
+    num_chiplets = len(df.index)
     
     # Generate topology configuration
     total_topology = (generate_router_node_mapping(num_chiplets) + 
@@ -167,7 +177,7 @@ def generate_booksim_files(df, topology_filename='anynet_file', trace_filename='
 #     print("Mesh Topology and Trace File Generator")
 #     print("=" * 50)
     
-#     # Create example DataFrame
+#     # Create example DataFrame with mixed labels
 #     matrix = [
 #         [5, 74, 0, 1, 3],
 #         [7, 7, 0, 1, 200],
@@ -178,8 +188,8 @@ def generate_booksim_files(df, topology_filename='anynet_file', trace_filename='
     
 #     df = pd.DataFrame(
 #         matrix,
-#         index=[f'C{i}' for i in range(len(matrix))],
-#         columns=[f'C{i}' for i in range(len(matrix))]
+#         index=['T0', 'T1', 'T2', 'ACC0', 'LIF0'],
+#         columns=['T0', 'T1', 'T2', 'ACC0', 'LIF0']
 #     )
     
 #     print("\nInput DataFrame:")
@@ -187,7 +197,7 @@ def generate_booksim_files(df, topology_filename='anynet_file', trace_filename='
 #     print()
     
 #     # Generate files
-#     topology, trace = generate_mesh_files(
+#     topology, trace = generate_booksim_files(
 #         df,
 #         topology_filename='anynet_file',
 #         trace_filename='trace_file'
