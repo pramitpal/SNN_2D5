@@ -78,6 +78,8 @@ class SNNMapper:
         self.xbars = None
         self.IFMS = None
         self.OFMS = None
+        self.TOPS =None
+        self.MEMS = None
         self.layer_output_sizes = None
         self.chiplet_data = None
         
@@ -87,19 +89,24 @@ class SNNMapper:
         params = []
         IFMS = []
         OFMS = []
-        
+        TOPS = []
+        MEMS = []
         for each in self.weights:
             IFM = each[0] * each[1] * each[2]
             param = each[2] * each[3] * each[4] * each[5]
             xbar = math.ceil(each[3] * each[4] * each[2] / self.X) * math.ceil(each[5] / self.X)
             OFM = each[0] * each[1] * each[5]
-            
+            # Operations: Output_H × Output_W × Kernel_H × Kernel_W × Input_Channels × Output_Channels
+            top = each[0] * each[1] * each[3] * each[4] * each[2] * each[5] /1e12
+            LIF_memory_bytes=param*self.Vmem_res/8
             params.append(param)
             xbars.append(xbar)
             IFMS.append(IFM)
             OFMS.append(OFM)
+            TOPS.append(top)
+            MEMS.append(LIF_memory_bytes)
             
-        return params, xbars, IFMS, OFMS
+        return params, xbars, IFMS, OFMS, TOPS, MEMS
     
     def _generate_chiplet_mapping(self):
         """Generate chiplet mapping for all layers."""
@@ -696,7 +703,7 @@ class SNNMapper:
             - 'chiplet_mapping': List - Detailed chiplet allocation information
         """
         # Calculate parameters
-        self.tunable_params, self.xbars, self.IFMS, self.OFMS = self._calc_tunable_params()
+        self.tunable_params, self.xbars, self.IFMS, self.OFMS,self.TOPS,self.MEMS = self._calc_tunable_params()
         self.layer_output_sizes = dict(zip(range(1, len(self.OFMS) + 1), self.OFMS))
         
         # Generate chiplet mapping
