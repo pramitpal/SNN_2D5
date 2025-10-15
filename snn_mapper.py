@@ -84,29 +84,43 @@ class SNNMapper:
         self.chiplet_data = None
         
     def _calc_tunable_params(self):
-        """Calculate tunable parameters for each layer."""
-        xbars = []
-        params = []
-        IFMS = []
-        OFMS = []
-        TOPS = []
-        MEMS = []
-        for each in self.weights:
-            IFM = each[0] * each[1] * each[2]
-            param = each[2] * each[3] * each[4] * each[5]
-            xbar = math.ceil(each[3] * each[4] * each[2] / self.X) * math.ceil(each[5] / self.X)
-            OFM = each[0] * each[1] * each[5]
-            # Operations: Output_H × Output_W × Kernel_H × Kernel_W × Input_Channels × Output_Channels
-            top = each[0] * each[1] * each[3] * each[4] * each[2] * each[5] /1e12
-            LIF_memory_bytes=param*self.Vmem_res/8
-            params.append(param)
-            xbars.append(xbar)
-            IFMS.append(IFM)
-            OFMS.append(OFM)
-            TOPS.append(top)
-            MEMS.append(LIF_memory_bytes)
-            
-        return params, xbars, IFMS, OFMS, TOPS, MEMS
+      """Calculate tunable parameters for each layer."""
+      xbars, params, IFMS, OFMS = [], [], [], []
+      MOVES_X, MOVES_Y, TOPS, TOTAL_MACS, MEMS = [], [], [], [], []
+
+      for each in self.weights:
+        IFM_H, IFM_W, IFM_C, K_H, K_W, K_N, Pool, Stride = each
+
+        IFM = IFM_H * IFM_W * IFM_C
+        param = IFM_C * K_H * K_W * K_N
+        xbar = math.ceil(K_H * K_W * IFM_C / self.X) * math.ceil(K_N / self.X)
+        OFM = IFM_H * IFM_W * K_N
+
+        # SAME padding if stride=1 and kernel is odd
+        pad_w = (K_W // 2) if (Stride == 1 and (K_W % 2 == 1)) else 0
+        pad_h = (K_H // 2) if (Stride == 1 and (K_H % 2 == 1)) else 0
+
+        moves_x = (IFM_W + 2 * pad_w - K_W) // Stride + 1
+        moves_y = (IFM_H + 2 * pad_h - K_H) // Stride + 1
+        ops_xy  = moves_x * moves_y
+
+        # Total MACs across all output channels
+        total_macs = ops_xy * K_H * K_W * IFM_C * K_N
+
+        # MOVES_X.append(moves_x)
+        # MOVES_Y.append(moves_y)
+        # OPS.append(ops_xy)
+        TOTAL_MACS.append(total_macs/1e12)
+
+        LIF_memory_bytes = param * self.Vmem_res / 8
+        params.append(param)
+        xbars.append(xbar)
+        IFMS.append(IFM)
+        OFMS.append(OFM)
+        MEMS.append(LIF_memory_bytes)
+
+      return params, xbars, IFMS, OFMS, TOTAL_MACS, MEMS
+
     
     def _generate_chiplet_mapping(self):
         """Generate chiplet mapping for all layers."""
