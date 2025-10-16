@@ -112,7 +112,7 @@ class SNNMapper:
         # OPS.append(ops_xy)
         TOTAL_MACS.append(total_macs/1e12)
 
-        LIF_memory_bytes = param * self.Vmem_res / 8
+        LIF_memory_bytes = IFM_H * IFM_W * K_N* self.Vmem_res / 8
         params.append(param)
         xbars.append(xbar)
         IFMS.append(IFM)
