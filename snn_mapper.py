@@ -94,25 +94,30 @@ class SNNMapper:
         IFM = IFM_H * IFM_W * IFM_C
         param = IFM_C * K_H * K_W * K_N
         xbar = math.ceil(K_H * K_W * IFM_C / self.X) * math.ceil(K_N / self.X)
-        OFM = IFM_H * IFM_W * K_N
-
+        if Pool < 0:
+          OFM = IFM_W * K_N
+        else:
+          OFM = IFM_H * IFM_W * K_N
         # SAME padding if stride=1 and kernel is odd
         pad_w = (K_W // 2) if (Stride == 1 and (K_W % 2 == 1)) else 0
         pad_h = (K_H // 2) if (Stride == 1 and (K_H % 2 == 1)) else 0
 
         moves_x = (IFM_W + 2 * pad_w - K_W) // Stride + 1
         moves_y = (IFM_H + 2 * pad_h - K_H) // Stride + 1
-        ops_xy  = moves_x * moves_y
-
-        # Total MACs across all output channels
-        total_macs = ops_xy * K_H * K_W * IFM_C * K_N
+        if Pool < 0:
+          ops_xy  = moves_x **2
+          total_macs = ops_xy * K_H * K_W * K_N
+        else:
+          ops_xy  = moves_x * moves_y
+          # Total MACs across all output channels
+          total_macs = ops_xy * K_H * K_W * IFM_C * K_N
 
         # MOVES_X.append(moves_x)
         # MOVES_Y.append(moves_y)
         # OPS.append(ops_xy)
-        TOTAL_MACS.append(total_macs/1e12)
+        TOTAL_MACS.append(total_macs/1)
 
-        LIF_memory_bytes = IFM_H * IFM_W * K_N* self.Vmem_res / 8
+        LIF_memory_bytes = OFM * self.Vmem_res / 8
         params.append(param)
         xbars.append(xbar)
         IFMS.append(IFM)
