@@ -93,7 +93,7 @@ class SNNMapper:
 
         IFM = IFM_H * IFM_W * IFM_C
         param = IFM_C * K_H * K_W * K_N
-        xbar = math.ceil(K_H * K_W * IFM_C / self.X) * math.ceil(K_N / self.X)
+        xbar = math.ceil(K_H * K_W * IFM_C / self.X) * math.ceil(K_N / (2*self.X)) #2bit per cell
         if Pool < 0:
           OFM = IFM_W * K_N
         else:
