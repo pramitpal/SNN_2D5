@@ -22,6 +22,7 @@ class SNNMapper:
         NPE: int = 19,
         NT: int = 16,
         X: int = 128,
+        bits_per_cell: int =1,
         P: int = 100,
         Vmem_res: int = 4,
         Timestep: int = 5,
@@ -66,6 +67,7 @@ class SNNMapper:
         self.NT = NT
         self.X = X
         self.P = P
+        self.bits_per_cell=bits_per_cell
         self.Vmem_res = Vmem_res
         self.Timestep = Timestep
         self.NoC_buswidth = NoC_buswidth
@@ -93,7 +95,7 @@ class SNNMapper:
 
         IFM = IFM_H * IFM_W * IFM_C
         param = IFM_C * K_H * K_W * K_N
-        xbar = math.ceil(K_H * K_W * IFM_C / self.X) * math.ceil(K_N / (2*self.X)) #2bit per cell
+        xbar = math.ceil(K_H * K_W * IFM_C / self.X) * math.ceil(K_N / (self.bits_per_cell*self.X)) #2bit per cell
         if Pool < 0:
           OFM = IFM_W * K_N
         else:
