@@ -41,4 +41,4 @@ sim_power = 1; //fixed
 
 tech_file = techfile_chiplet.txt; //change accordingly 
 
-channel_width = 32;
+channel_width = 16;
